@@ -7,6 +7,7 @@ import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 import ai.timefold.solver.core.api.domain.variable.InverseRelationShadowVariable;
 import ai.timefold.solver.core.api.domain.variable.NextElementShadowVariable;
+import ai.timefold.solver.core.api.domain.variable.PiggybackShadowVariable;
 import ai.timefold.solver.core.api.domain.variable.PreviousElementShadowVariable;
 import ai.timefold.solver.core.api.domain.variable.ShadowVariable;
 
@@ -24,9 +25,9 @@ public class Visit {
 
     @PlanningId
     private String id;
-    private String name;
-    private Location location;
-    private int demand;
+   // private String name;
+  //  private Location location;
+    private Integer demand;
     private LocalDateTime minStartTime;
     private LocalDateTime maxEndTime;
     private Duration serviceDuration;
@@ -39,24 +40,31 @@ public class Visit {
 
     private LocalDateTime arrivalTime;
 
+    private int deliveryIndex;
+    
+    private Customer customer;
+
     public Visit() {
+        this.customer = new Customer();
+
     }
 
-    public Visit(String id, String name, Location location, int demand,
+    public Visit(String id, Customer customer, int demand,
                  LocalDateTime minStartTime, LocalDateTime maxEndTime, Duration serviceDuration) {
         this.id = id;
-        this.name = name;
-        this.location = location;
+       // this.name = name;
+      //  this.location = location;
         this.demand = demand;
         this.minStartTime = minStartTime;
         this.maxEndTime = maxEndTime;
         this.serviceDuration = serviceDuration;
+        this.customer = customer;
     }
 
     public String getId() {
         return id;
     }
-
+/* 
     public String getName() {
         return name;
     }
@@ -72,12 +80,13 @@ public class Visit {
     public void setLocation(Location location) {
         this.location = location;
     }
-
-    public int getDemand() {
+    */
+ //   @PiggybackShadowVariable(shadowVariableName = "arrivalTime")
+    public Integer getDemand() {
         return demand;
     }
 
-    public void setDemand(int demand) {
+    public void setDemand(Integer demand) {
         this.demand = demand;
     }
 
@@ -174,9 +183,9 @@ public class Visit {
                     "This method must not be called when the shadow variables are not initialized yet.");
         }
         if (previousVisit == null) {
-            return vehicle.getHomeLocation().getDrivingTimeTo(location);
+            return vehicle.getHomeLocation().getDrivingTimeTo(customer.getLocation());
         }
-        return previousVisit.getLocation().getDrivingTimeTo(location);
+        return previousVisit.getCustomer().getLocation().getDrivingTimeTo(customer.getLocation());
     }
 
     // Required by the web UI even before the solution has been initialized.
@@ -193,4 +202,40 @@ public class Visit {
         return id;
     }
 
+    public Visit getNextDelivery() {
+        if( customer.getVisits() == null || deliveryIndex + 1 < customer.getVisits().size() ) {
+            return customer.getVisits().get(deliveryIndex + 1);
+        }
+        return null;
+    }
+
+    public Visit getPreviousDelivery() {
+        if(customer.getVisits() == null || deliveryIndex - 1 < 0 ) {
+            return null;
+        }
+        return customer.getVisits().get(deliveryIndex - 1);
+    }
+
+    public int getDeliveryIndex() {
+        return deliveryIndex;
+    }
+
+    public void setDeliveryIndex(int deliveryIndex) {
+        this.deliveryIndex = deliveryIndex;
+    }
+
+    public Customer getCustomer() {
+        return customer;
+    }
+
+    public void setCustomer(Customer customer) {
+        this.customer = customer;
+    }
+    public Location getLocation() {
+        return customer.getLocation();
+    }
+
+    public String getName() {
+        return customer.getName();
+    }
 }

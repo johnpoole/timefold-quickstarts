@@ -99,8 +99,8 @@ public class Vehicle {
         Location previousLocation = homeLocation;
 
         for (Visit visit : visits) {
-            totalDrivingTime += previousLocation.getDrivingTimeTo(visit.getLocation());
-            previousLocation = visit.getLocation();
+            totalDrivingTime += previousLocation.getDrivingTimeTo(visit.getCustomer().getLocation());
+            previousLocation = visit.getCustomer().getLocation();
         }
         totalDrivingTime += previousLocation.getDrivingTimeTo(homeLocation);
 
@@ -114,7 +114,7 @@ public class Vehicle {
         }
 
         Visit lastVisit = visits.get(visits.size() - 1);
-        return lastVisit.getDepartureTime().plusSeconds(lastVisit.getLocation().getDrivingTimeTo(homeLocation));
+        return lastVisit.getDepartureTime().plusSeconds(lastVisit.getCustomer().getLocation().getDrivingTimeTo(homeLocation));
     }
 
     @Override

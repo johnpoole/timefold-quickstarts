@@ -18,6 +18,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.core.MediaType;
 
+import org.acme.vehiclerouting.domain.Customer;
 import org.acme.vehiclerouting.domain.Location;
 import org.acme.vehiclerouting.domain.Vehicle;
 import org.acme.vehiclerouting.domain.VehicleRoutePlan;
@@ -186,10 +187,14 @@ public class VehicleRouteDemoResource {
                     morningTimeWindow ? tomorrowAt(MORNING_WINDOW_START) : tomorrowAt(AFTERNOON_WINDOW_START);
             LocalDateTime maxEndTime = morningTimeWindow ? tomorrowAt(MORNING_WINDOW_END) : tomorrowAt(AFTERNOON_WINDOW_END);
             int serviceDurationMinutes = SERVICE_DURATION_MINUTES[random.nextInt(SERVICE_DURATION_MINUTES.length)];
+            Customer customer = new Customer();
+            customer.setName(nameSupplier.get());
+                customer.setCapacity(demand.nextInt()*20);
+                customer.setRate(0.5f);
+                customer.setLocation(new Location(latitudes.nextDouble(), longitudes.nextDouble()));
             return new Visit(
                     String.valueOf(visitSequence.incrementAndGet()),
-                    nameSupplier.get(),
-                    new Location(latitudes.nextDouble(), longitudes.nextDouble()),
+                   customer,
                     demand.nextInt(),
                     minStartTime,
                     maxEndTime,

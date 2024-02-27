@@ -3,11 +3,13 @@ package org.acme.vehiclerouting.solver;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Objects;
+import java.util.Optional;
 
 import ai.timefold.solver.core.api.domain.variable.VariableListener;
 import ai.timefold.solver.core.api.score.director.ScoreDirector;
 
 import org.acme.vehiclerouting.domain.Visit;
+import org.eclipse.microprofile.openapi.models.parameters.Parameter.In;
 import org.acme.vehiclerouting.domain.VehicleRoutePlan;
 
 // TODO: update this to take the demand change into account
@@ -41,41 +43,45 @@ public class ArrivalTimeUpdatingVariableListener implements VariableListener<Veh
             scoreDirector.beforeVariableChanged(nextVisit, ARRIVAL_TIME_FIELD);
             nextVisit.setArrivalTime(arrivalTime);
             scoreDirector.afterVariableChanged(nextVisit, ARRIVAL_TIME_FIELD);
-        //    updateDemand(scoreDirector, nextVisit);
-        //    updateDemand(scoreDirector, nextVisit.getNextDelivery());
+            updateDemand(scoreDirector, nextVisit);
+            updateDemand(scoreDirector, nextVisit.getNextDelivery());
             departureTime = nextVisit.getDepartureTime();
             nextVisit = nextVisit.getNextVisit();
             arrivalTime = calculateArrivalTime(nextVisit, departureTime);
         }
     }
 
-    private void updateDemand(ScoreDirector<VehicleRoutePlan> scoreDirector, Visit nextVisit) {
-        if (nextVisit == null) {
+    private void updateDemand(ScoreDirector<VehicleRoutePlan> scoreDirector, Visit visit) {
+        if (visit == null) {
             return;
         }
-       // Visit previousDelivery = nextVisit.getPreviousDelivery();
-      //  Integer demand = calculateDemand(previousDelivery, nextVisit);
-        //if (!Objects.equals(customer.getDemand(), demand)) {
-        scoreDirector.beforeVariableChanged(nextVisit, "demand");
-        nextVisit.setDemand(0);
-        scoreDirector.afterVariableChanged(nextVisit, "demand");
-    }
-
-    private Integer calculateDemand(Visit previousDelivery, Visit visit) {
-          Integer demand = null;
-        if (visit.getArrivalTime() != null) {
-            if (previousDelivery != null) {
-                if (previousDelivery.getArrivalTime() != null) {
-                   // demand = calculateDemand(previousDelivery.getArrivalTime(), visit.getArrivalTime(), visit.getLocation().getRate());
+        Visit previousDelivery = visit.getPreviousDelivery();
+        Integer demand = calculateDemand(previousDelivery, visit).orElseGet(
+                () ->{ 
+                    if( visit.getArrivalTime() == null){
+                        return 0;
+                    }
+                    return calculateDemand(visit.getCustomer().getSensorReading().getDate().atStartOfDay(), 
+                visit.getArrivalTime(), 
+                visit.getCustomer().getRate())+visit.getCustomer().getSensorReading().getValue();
                 }
-            } else { // demand for first pickup, after changes, this should never happen
-                demand = 0;
-            }
+        );
+        if (!Objects.equals(visit.getDemand(), demand)) {
+        scoreDirector.beforeVariableChanged(visit, "demand");
+        visit.setDemand(demand);
+        scoreDirector.afterVariableChanged(visit, "demand");
         }
-
-        return demand;
     }
 
+    private Optional<Integer> calculateDemand(Visit previousDelivery, Visit visit) {
+        if (visit.getArrivalTime() != null && previousDelivery != null && previousDelivery.getArrivalTime() != null) {
+            return Optional.of(calculateDemand(previousDelivery.getArrivalTime(), visit.getArrivalTime(),
+                    visit.getCustomer().getRate()));
+        }
+        return Optional.empty();
+    }
+
+   
     private Integer calculateDemand(LocalDateTime startTime, LocalDateTime endtime, float rate) {
         //get the difference in days between the two dates
         int days = (int) ChronoUnit.DAYS.between(startTime, endtime);

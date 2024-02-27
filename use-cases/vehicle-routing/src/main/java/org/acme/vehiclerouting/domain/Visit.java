@@ -25,8 +25,7 @@ public class Visit {
 
     @PlanningId
     private String id;
-   // private String name;
-  //  private Location location;
+ 
     private Integer demand;
     private LocalDateTime minStartTime;
     private LocalDateTime maxEndTime;
@@ -52,8 +51,6 @@ public class Visit {
     public Visit(String id, Customer customer, int demand,
                  LocalDateTime minStartTime, LocalDateTime maxEndTime, Duration serviceDuration) {
         this.id = id;
-       // this.name = name;
-      //  this.location = location;
         this.demand = demand;
         this.minStartTime = minStartTime;
         this.maxEndTime = maxEndTime;
@@ -64,24 +61,8 @@ public class Visit {
     public String getId() {
         return id;
     }
-/* 
-    public String getName() {
-        return name;
-    }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public Location getLocation() {
-        return location;
-    }
-
-    public void setLocation(Location location) {
-        this.location = location;
-    }
-    */
- //   @PiggybackShadowVariable(shadowVariableName = "arrivalTime")
+    @PiggybackShadowVariable(shadowVariableName = "arrivalTime")
     public Integer getDemand() {
         return demand;
     }

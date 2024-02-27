@@ -130,7 +130,7 @@ function getVisitMarker(visit) {
     if (marker) {
         return marker;
     }
-    marker = L.circleMarker(visit.location);
+    marker = L.circleMarker(visit.location,{ radius: visit.demand * 10});
     marker.addTo(visitGroup).bindPopup();
     visitMarkerByIdMap.set(visit.id, marker);
     return marker;

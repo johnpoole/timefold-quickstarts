@@ -205,9 +205,9 @@ public class VehicleRouteDemoResource {
                         Customer customer = new Customer();
                         customer.setName(nameSupplier.get());
                         customer.setCapacity(demand.nextInt() * 20);
-                        customer.setRate(0.5f);
+                        customer.setRate(demand.nextInt());
                         customer.setLocation(new Location(latitudes.nextDouble(), longitudes.nextDouble()));
-                        LocalDate date = LocalDate.now().plusDays(1L);
+                        LocalDate date = LocalDate.now().minusDays(demand.nextInt());
                         SensorReading sensorReading = new SensorReading(date, 10);
                         customer.setSensorReading(sensorReading);
                         return new Visit(

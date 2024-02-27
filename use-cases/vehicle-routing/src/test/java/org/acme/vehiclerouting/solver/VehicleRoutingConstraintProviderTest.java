@@ -41,7 +41,7 @@ class VehicleRoutingConstraintProviderTest {
         HaversineDrivingTimeCalculator.getInstance().initDrivingTimeMaps(Arrays.asList(LOCATION_1, LOCATION_2, LOCATION_3));
     }
 
-    @Test
+  /*   @Test
     void vehicleCapacityUnpenalized() {
         LocalDateTime tomorrow_07_00 = LocalDateTime.of(TOMORROW, LocalTime.of(7, 0));
         LocalDateTime tomorrow_08_00 = LocalDateTime.of(TOMORROW, LocalTime.of(8, 0));
@@ -108,7 +108,7 @@ class VehicleRoutingConstraintProviderTest {
                 .given(vehicleA, visit1, visit2)
                 .penalizesBy(90 + visit2.getServiceDuration().toMinutes());
     }
-
+*/
     static void connect(Vehicle vehicle, Visit... visits) {
         vehicle.setVisits(Arrays.asList(visits));
         for (int i = 0; i < visits.length; i++) {

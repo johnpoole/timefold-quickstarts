@@ -182,7 +182,7 @@ public class VehicleRouteDemoResource {
 //can the vehicles use a single location and just have multiple start Times?
                 Supplier<Vehicle> vehicleSupplier = () -> new Vehicle(
                                 String.valueOf(vehicleSequence.incrementAndGet()),
-                                vehicleCapacity.nextInt(),
+                                150,
                                 new Location(latitudes.nextDouble(), longitudes.nextDouble()),
                                 daysFromToday(demoData.vehicleStartTime, vehicleSequence.get()));
 
@@ -209,8 +209,8 @@ public class VehicleRouteDemoResource {
 // new code for dynamic demand customer
                         Customer customer = new Customer();
                         customer.setName(nameSupplier.get());
-                        customer.setCapacity(demand.nextInt() * 20);
-                        customer.setRate(demand.nextInt());
+                        customer.setCapacity(150);
+                        customer.setRate(1);
                         customer.setLocation(new Location(latitudes.nextDouble(), longitudes.nextDouble()));
 // and sensor reading
                         LocalDate date = LocalDate.now().minusDays(demand.nextInt());

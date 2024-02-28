@@ -31,7 +31,7 @@ const byVehicleTimelineOptions = {
     stack: false,
     stackSubgroups: false,
     zoomMin: 1000 * 60 * 60, // A single hour in milliseconds
-    zoomMax: 1000 * 60 * 60 * 24 // A single day in milliseconds
+    zoomMax: 1000 * 60 * 60 * 24 * 7 // A single day in milliseconds
 };
 const byVehicleGroupData = new vis.DataSet();
 const byVehicleItemData = new vis.DataSet();
@@ -46,7 +46,7 @@ const byVisitTimelineOptions = {
     stack: false,
     stackSubgroups: false,
     zoomMin: 1000 * 60 * 60, // A single hour in milliseconds
-    zoomMax: 1000 * 60 * 60 * 24 // A single day in milliseconds
+    zoomMax: 1000 * 60 * 60 * 24 * 7 // A single day in milliseconds
 };
 const byVisitGroupData = new vis.DataSet();
 const byVisitItemData = new vis.DataSet();
@@ -167,6 +167,7 @@ function renderRoutes(solution) {
     });
     // Visits
     visitMarkerByIdMap.clear();
+    visitGroup.clearLayers();
     solution.visits.forEach(function (visit) {
         getVisitMarker(visit).setPopupContent(visitPopupContent(visit));
     });

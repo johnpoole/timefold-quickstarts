@@ -52,15 +52,15 @@ public class VehicleRouteDemoResource {
                                 1, 2, 55, 90,
                                 new Location(50.2, -114.5),
                                 new Location(51.5, -113.5)),
-                PHILADELPHIA(0, 55, 6, LocalTime.of(7, 30),
+                PHILADELPHIA(1, 55, 6, LocalTime.of(7, 30),
                                 1, 2, 55, 90,
                                 new Location(39.7656099067391, -76.83782328143754),
                                 new Location(40.77636644354855, -74.9300739430771)),
-                HARTFORT(1, 50, 6, LocalTime.of(7, 30),
+                HARTFORT(2, 50, 6, LocalTime.of(7, 30),
                                 1, 3, 20, 30,
                                 new Location(41.48366520850297, -73.15901689943055),
                                 new Location(41.99512052869307, -72.25114548877427)),
-                FIRENZE(2, 77, 6, LocalTime.of(7, 30),
+                FIRENZE(3, 77, 6, LocalTime.of(7, 30),
                                 1, 2, 20, 40,
                                 new Location(43.751466, 11.177210), new Location(43.809291, 11.290195));
 
@@ -178,11 +178,13 @@ public class VehicleRouteDemoResource {
                                 .iterator();
 
                 AtomicLong vehicleSequence = new AtomicLong();
+
+//can the vehicles use a single location and just have multiple start Times?
                 Supplier<Vehicle> vehicleSupplier = () -> new Vehicle(
                                 String.valueOf(vehicleSequence.incrementAndGet()),
                                 vehicleCapacity.nextInt(),
                                 new Location(latitudes.nextDouble(), longitudes.nextDouble()),
-                                tomorrowAt(demoData.vehicleStartTime));
+                                daysFromToday(demoData.vehicleStartTime, vehicleSequence.get()));
 
                 List<Vehicle> vehicles = Stream.generate(vehicleSupplier)
                                 .limit(demoData.vehicleCount)
@@ -198,22 +200,23 @@ public class VehicleRouteDemoResource {
 
                 AtomicLong visitSequence = new AtomicLong();
                 Supplier<Visit> visitSupplier = () -> {
-                        boolean morningTimeWindow = random.nextBoolean();
 
-                        LocalDateTime minStartTime = morningTimeWindow ? tomorrowAt(MORNING_WINDOW_START)
-                                        : tomorrowAt(AFTERNOON_WINDOW_START);
-                        LocalDateTime maxEndTime = morningTimeWindow ? tomorrowAt(MORNING_WINDOW_END)
-                                        : tomorrowAt(AFTERNOON_WINDOW_END);
+                        LocalDateTime minStartTime = tomorrowAt(MORNING_WINDOW_START);
+                        LocalDateTime maxEndTime = daysFromToday(AFTERNOON_WINDOW_END, 7);
                         int serviceDurationMinutes = SERVICE_DURATION_MINUTES[random
                                         .nextInt(SERVICE_DURATION_MINUTES.length)];
+
+// new code for dynamic demand customer
                         Customer customer = new Customer();
                         customer.setName(nameSupplier.get());
                         customer.setCapacity(demand.nextInt() * 20);
                         customer.setRate(demand.nextInt());
                         customer.setLocation(new Location(latitudes.nextDouble(), longitudes.nextDouble()));
+// and sensor reading
                         LocalDate date = LocalDate.now().minusDays(demand.nextInt());
                         SensorReading sensorReading = new SensorReading(date, 10);
                         customer.setSensorReading(sensorReading);
+
                         return new Visit(
                                         String.valueOf(visitSequence.incrementAndGet()),
                                         customer,
@@ -228,11 +231,15 @@ public class VehicleRouteDemoResource {
                                 .collect(Collectors.toList());
 
                 return new VehicleRoutePlan(name, demoData.southWestCorner, demoData.northEastCorner,
-                                tomorrowAt(demoData.vehicleStartTime), tomorrowAt(LocalTime.MIDNIGHT).plusDays(1L),
+                                tomorrowAt(demoData.vehicleStartTime), daysFromToday(LocalTime.MIDNIGHT, 7).plusDays(1L),
                                 vehicles, visits);
         }
 
         private static LocalDateTime tomorrowAt(LocalTime time) {
                 return LocalDateTime.of(LocalDate.now().plusDays(1L), time);
+        }
+
+        private static LocalDateTime daysFromToday(LocalTime time, long days) {
+                return LocalDateTime.of(LocalDate.now().plusDays(days), time);
         }
 }

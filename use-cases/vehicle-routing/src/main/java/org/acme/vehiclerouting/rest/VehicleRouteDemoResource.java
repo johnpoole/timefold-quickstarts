@@ -48,8 +48,12 @@ public class VehicleRouteDemoResource {
         private static final LocalTime AFTERNOON_WINDOW_END = LocalTime.of(18, 0);
 
         public enum DemoData {
+                CALGARY(0, 55, 6, LocalTime.of(7, 30),
+                                1, 2, 55, 90,
+                                new Location(50.2, -114.5),
+                                new Location(51.5, -113.5)),
                 PHILADELPHIA(0, 55, 6, LocalTime.of(7, 30),
-                                1, 2, 15, 30,
+                                1, 2, 55, 90,
                                 new Location(39.7656099067391, -76.83782328143754),
                                 new Location(40.77636644354855, -74.9300739430771)),
                 HARTFORT(1, 50, 6, LocalTime.of(7, 30),

@@ -130,7 +130,7 @@ function getVisitMarker(visit) {
     if (marker) {
         return marker;
     }
-    marker = L.circleMarker(visit.location,{ radius: visit.demand * 10});
+    marker = L.circleMarker(visit.location,{ radius: visit.demand });
     marker.addTo(visitGroup).bindPopup();
     visitMarkerByIdMap.set(visit.id, marker);
     return marker;
@@ -166,6 +166,7 @@ function renderRoutes(solution) {
       </tr>`);
     });
     // Visits
+    visitMarkerByIdMap.clear();
     solution.visits.forEach(function (visit) {
         getVisitMarker(visit).setPopupContent(visitPopupContent(visit));
     });

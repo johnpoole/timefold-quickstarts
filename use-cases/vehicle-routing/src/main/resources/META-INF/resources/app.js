@@ -136,6 +136,12 @@ function getVisitMarker(visit) {
     return marker;
 }
 
+function getCustomerMarker(visit) {
+    let marker = L.circleMarker(visit.location,{ radius: visit.customer.capacity, color: 'red', fillOpacity: 0.0});
+    marker.addTo(visitGroup).bindPopup();
+    return marker;
+}
+
 function renderRoutes(solution) {
     if (!initialized) {
         const bounds = [solution.southWestCorner, solution.northEastCorner];
@@ -169,6 +175,8 @@ function renderRoutes(solution) {
     visitMarkerByIdMap.clear();
     visitGroup.clearLayers();
     solution.visits.forEach(function (visit) {
+        getCustomerMarker(visit);
+
         getVisitMarker(visit).setPopupContent(visitPopupContent(visit));
     });
     // Route

@@ -209,7 +209,7 @@ public class VehicleRouteDemoResource {
 // new code for dynamic demand customer
                         Customer customer = new Customer();
                         customer.setName(nameSupplier.get());
-                        customer.setCapacity(150);
+                        customer.setCapacity(16);
                         customer.setRate(1);
                         customer.setLocation(new Location(latitudes.nextDouble(), longitudes.nextDouble()));
 // and sensor reading

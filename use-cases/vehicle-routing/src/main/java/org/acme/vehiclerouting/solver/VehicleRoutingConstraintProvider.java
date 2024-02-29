@@ -7,6 +7,7 @@ import ai.timefold.solver.core.api.score.stream.ConstraintProvider;
 
 import org.acme.vehiclerouting.domain.Visit;
 import org.acme.vehiclerouting.domain.Vehicle;
+import org.acme.vehiclerouting.solver.justifications.CustomerCapacityJustification;
 import org.acme.vehiclerouting.solver.justifications.MinimizeTravelTimeJustification;
 import org.acme.vehiclerouting.solver.justifications.ServiceFinishedAfterMaxEndTimeJustification;
 import org.acme.vehiclerouting.solver.justifications.VehicleCapacityJustification;
@@ -61,6 +62,9 @@ public class VehicleRoutingConstraintProvider implements ConstraintProvider {
                                 .filter(visit -> visit.getDemand() > visit.getCustomer().getCapacity())
                                 .penalizeLong(HardSoftLongScore.ONE_HARD,
                                                 visit -> visit.getDemand() - visit.getCustomer().getCapacity())
+                                .justifyWith( (visit, score) -> new CustomerCapacityJustification(visit.getId(),
+                                                visit.getDemand(),
+                                                visit.getCustomer().getCapacity()))
                                 .asConstraint("customerCapacity");
         }
 

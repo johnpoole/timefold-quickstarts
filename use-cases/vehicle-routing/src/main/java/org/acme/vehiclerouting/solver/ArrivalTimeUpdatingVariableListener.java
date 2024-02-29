@@ -9,12 +9,12 @@ import ai.timefold.solver.core.api.domain.variable.VariableListener;
 import ai.timefold.solver.core.api.score.director.ScoreDirector;
 
 import org.acme.vehiclerouting.domain.Visit;
-import org.eclipse.microprofile.openapi.models.parameters.Parameter.In;
 import org.acme.vehiclerouting.domain.VehicleRoutePlan;
 
 // TODO: update this to take the demand change into account
 public class ArrivalTimeUpdatingVariableListener implements VariableListener<VehicleRoutePlan, Visit> {
 
+    private static final String DEMAND_FIELD = "demand";
     private static final String ARRIVAL_TIME_FIELD = "arrivalTime";
 
     @Override
@@ -34,15 +34,13 @@ public class ArrivalTimeUpdatingVariableListener implements VariableListener<Veh
         }
 
         Visit previousVisit = visit.getPreviousVisit();
-        LocalDateTime departureTime =
-                previousVisit == null ? visit.getVehicle().getDepartureTime() : previousVisit.getDepartureTime();
+        LocalDateTime departureTime = previousVisit == null ? visit.getVehicle().getDepartureTime()
+                : previousVisit.getDepartureTime();
 
         Visit nextVisit = visit;
         LocalDateTime arrivalTime = calculateArrivalTime(nextVisit, departureTime);
         while (nextVisit != null && !Objects.equals(nextVisit.getArrivalTime(), arrivalTime)) {
-            scoreDirector.beforeVariableChanged(nextVisit, ARRIVAL_TIME_FIELD);
-            nextVisit.setArrivalTime(arrivalTime);
-            scoreDirector.afterVariableChanged(nextVisit, ARRIVAL_TIME_FIELD);
+            safeSetArrivalTime(scoreDirector, nextVisit, arrivalTime);
             updateDemand(scoreDirector, nextVisit);
             updateDemand(scoreDirector, nextVisit.getNextDelivery());
             departureTime = nextVisit.getDepartureTime();
@@ -51,25 +49,34 @@ public class ArrivalTimeUpdatingVariableListener implements VariableListener<Veh
         }
     }
 
+    private void safeSetArrivalTime(ScoreDirector<VehicleRoutePlan> scoreDirector, Visit nextVisit, LocalDateTime arrivalTime) {
+        scoreDirector.beforeVariableChanged(nextVisit, ARRIVAL_TIME_FIELD);
+        nextVisit.setArrivalTime(arrivalTime);
+        scoreDirector.afterVariableChanged(nextVisit, ARRIVAL_TIME_FIELD);
+    }
+
     private void updateDemand(ScoreDirector<VehicleRoutePlan> scoreDirector, Visit visit) {
         if (visit == null) {
             return;
         }
         Visit previousDelivery = visit.getPreviousDelivery();
         Integer demand = calculateDemand(previousDelivery, visit).orElseGet(
-                () ->{ 
-                    if( visit.getArrivalTime() == null){
+                () -> {
+                    if (visit.getArrivalTime() == null) {
                         return 0;
                     }
-                    return calculateDemand(visit.getCustomer().getSensorReading().getDate().atStartOfDay(), 
-                visit.getArrivalTime(), 
-                visit.getCustomer().getRate())+visit.getCustomer().getSensorReading().getValue();
-                }
-        );
+                    return calculateDemand(visit.getCustomer().getSensorReading().getDate().atStartOfDay(),
+                            visit.getArrivalTime(),
+                            visit.getCustomer().getRate()) + visit.getCustomer().getSensorReading().getValue();
+                });
+        safeSetDemand(scoreDirector, visit, demand);
+    }
+
+    private void safeSetDemand(ScoreDirector<VehicleRoutePlan> scoreDirector, Visit visit, Integer demand) {
         if (!Objects.equals(visit.getDemand(), demand)) {
-        scoreDirector.beforeVariableChanged(visit, "demand");
-        visit.setDemand(demand);
-        scoreDirector.afterVariableChanged(visit, "demand");
+            scoreDirector.beforeVariableChanged(visit, DEMAND_FIELD);
+            visit.setDemand(demand);
+            scoreDirector.afterVariableChanged(visit, DEMAND_FIELD);
         }
     }
 
@@ -81,16 +88,16 @@ public class ArrivalTimeUpdatingVariableListener implements VariableListener<Veh
         return Optional.empty();
     }
 
-   
     private Integer calculateDemand(LocalDateTime startTime, LocalDateTime endtime, float rate) {
-        //get the difference in days between the two dates
+        // get the difference in days between the two dates
         int days = (int) ChronoUnit.DAYS.between(startTime, endtime);
         return (int) (days * rate);
     }
+
     protected Integer calculateDemand(long startTime, long endTime, double rate) {
         return (int) ((endTime - startTime) * rate);
     }
-    
+
     @Override
     public void beforeEntityAdded(ScoreDirector<VehicleRoutePlan> scoreDirector, Visit visit) {
 

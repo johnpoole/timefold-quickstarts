@@ -180,7 +180,7 @@ public class VehicleRouteDemoResource {
 
                 AtomicLong vehicleSequence = new AtomicLong();
 
-//can the vehicles use a single location and just have multiple start Times?
+                // can the vehicles use a single location and just have multiple start Times?
                 Supplier<Vehicle> vehicleSupplier = () -> new Vehicle(
                                 String.valueOf(vehicleSequence.incrementAndGet()),
                                 150,
@@ -199,39 +199,43 @@ public class VehicleRouteDemoResource {
                         return firstName + " " + lastName;
                 };
                 List<Customer> customers = new ArrayList<>();
-                for( long i =0 ; i < demoData.visitCount; i++){
-              
+                for (long i = 0; i < demoData.visitCount; i++) {
+
                         Customer customer = new Customer();
                         customer.setId(i);
                         customer.setName(nameSupplier.get());
                         customer.setCapacity(16);
                         customer.setRate(1);
                         customer.setLocation(new Location(latitudes.nextDouble(), longitudes.nextDouble()));
-// and sensor reading
+                        // and sensor reading
                         LocalDate date = LocalDate.now().minusDays(demand.nextInt());
                         SensorReading sensorReading = new SensorReading(date, 10);
                         customer.setSensorReading(sensorReading);
                         customers.add(customer);
-                };
+                }
+                ;
                 AtomicLong visitSequence = new AtomicLong();
                 List<Visit> visits = new ArrayList<>();
-                for( Customer customer: customers) {
-                        LocalDateTime minStartTime = tomorrowAt(MORNING_WINDOW_START);
-                        LocalDateTime maxEndTime = daysFromToday(AFTERNOON_WINDOW_END, 7);
-                        int serviceDurationMinutes = SERVICE_DURATION_MINUTES[random
-                                        .nextInt(SERVICE_DURATION_MINUTES.length)];
-                        visits.add(new Visit(
-                                        String.valueOf(visitSequence.incrementAndGet()),
-                                        customer,
-                                        demand.nextInt(),
-                                        minStartTime,
-                                        maxEndTime,
-                                        Duration.ofMinutes(serviceDurationMinutes)));
+                for (Customer customer : customers) {
+                        for (int v = 0; v < 1; v++) {
+                                LocalDateTime minStartTime = tomorrowAt(MORNING_WINDOW_START);
+                                LocalDateTime maxEndTime = daysFromToday(AFTERNOON_WINDOW_END, 7);
+                                int serviceDurationMinutes = SERVICE_DURATION_MINUTES[random
+                                                .nextInt(SERVICE_DURATION_MINUTES.length)];
+                                visits.add(new Visit(
+                                                String.valueOf(visitSequence.incrementAndGet()),
+                                                customer,
+                                                demand.nextInt(),
+                                                minStartTime,
+                                                maxEndTime,
+                                                Duration.ofMinutes(serviceDurationMinutes)));
+                        }
                 }
-                
+
                 return new VehicleRoutePlan(name, demoData.southWestCorner, demoData.northEastCorner,
-                                tomorrowAt(demoData.vehicleStartTime), daysFromToday(LocalTime.MIDNIGHT, 7).plusDays(1L),
-                                vehicles, visits);
+                                tomorrowAt(demoData.vehicleStartTime),
+                                daysFromToday(LocalTime.MIDNIGHT, 7).plusDays(1L),
+                                vehicles, customers, visits);
         }
 
         private static LocalDateTime tomorrowAt(LocalTime time) {

@@ -2,6 +2,7 @@ package org.acme.vehiclerouting.domain;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import ai.timefold.solver.core.api.domain.solution.PlanningEntityCollectionProperty;
@@ -43,6 +44,8 @@ public class VehicleRoutePlan {
     private LocalDateTime startDateTime;
 
     private LocalDateTime endDateTime;
+    @ProblemFactCollectionProperty
+    private List<Customer> customers;
 
     @PlanningEntityCollectionProperty
     private List<Vehicle> vehicles;
@@ -74,6 +77,7 @@ public class VehicleRoutePlan {
             @JsonProperty("startDateTime") LocalDateTime startDateTime,
             @JsonProperty("endDateTime") LocalDateTime endDateTime,
             @JsonProperty("vehicles") List<Vehicle> vehicles,
+            @JsonProperty("customers") List<Customer> customers,
             @JsonProperty("visits") List<Visit> visits) {
         this.name = name;
         this.southWestCorner = southWestCorner;
@@ -81,13 +85,16 @@ public class VehicleRoutePlan {
         this.startDateTime = startDateTime;
         this.endDateTime = endDateTime;
         this.vehicles = vehicles;
+        this.customers = customers;
         this.visits = visits;
-        List<Location> locations = Stream.concat(
-                vehicles.stream().map(Vehicle::getHomeLocation),
-                visits.stream().map(Visit::getLocation)).toList();
+        List<Location> uniqueLocations = Stream.concat(
+        vehicles.stream().map(Vehicle::getHomeLocation),
+        visits.stream().map(Visit::getLocation))
+    .distinct() // This will filter out duplicate Location objects
+    .collect(Collectors.toList()); // Collect the results into a List
 
         DrivingTimeCalculator drivingTimeCalculator = HaversineDrivingTimeCalculator.getInstance();
-        drivingTimeCalculator.initDrivingTimeMaps(locations);
+        drivingTimeCalculator.initDrivingTimeMaps(uniqueLocations);
     }
 
     public String getName() {
@@ -150,5 +157,13 @@ public class VehicleRoutePlan {
 
     public void setScoreExplanation(String scoreExplanation) {
         this.scoreExplanation = scoreExplanation;
+    }
+
+    public List<Customer> getCustomers() {
+        return customers;
+    }
+    
+    public void setCustomers(List<Customer> customers) {
+        this.customers = customers;
     }
 }

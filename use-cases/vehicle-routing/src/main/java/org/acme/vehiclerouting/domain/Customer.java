@@ -3,8 +3,11 @@ package org.acme.vehiclerouting.domain;
 import java.util.ArrayList;
 import java.util.List;
 
-import ai.timefold.solver.core.api.domain.lookup.PlanningId;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
+import ai.timefold.solver.core.api.domain.lookup.PlanningId;
+@JsonIdentityInfo(scope = Customer.class, generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 public class Customer {
     @PlanningId
     private long id;

@@ -42,7 +42,7 @@ public class ArrivalTimeUpdatingVariableListener implements VariableListener<Veh
         while (nextVisit != null && !Objects.equals(nextVisit.getArrivalTime(), arrivalTime)) {
             safeSetArrivalTime(scoreDirector, nextVisit, arrivalTime);
             updateDemand(scoreDirector, nextVisit);
-            updateDemand(scoreDirector, nextVisit.getNextDelivery());
+            updateDemand(scoreDirector, nextVisit.getNextDelivery()); //not the same as the next visit, so both need to be updated
             departureTime = nextVisit.getDepartureTime();
             nextVisit = nextVisit.getNextVisit();
             arrivalTime = calculateArrivalTime(nextVisit, departureTime);
@@ -56,7 +56,7 @@ public class ArrivalTimeUpdatingVariableListener implements VariableListener<Veh
     }
 
     private void updateDemand(ScoreDirector<VehicleRoutePlan> scoreDirector, Visit visit) {
-        if (visit == null) {
+        if (visit == null || visit.getArrivalTime() == null) {
             return;
         }
         Visit previousDelivery = visit.getPreviousDelivery();
@@ -65,9 +65,10 @@ public class ArrivalTimeUpdatingVariableListener implements VariableListener<Veh
                     if (visit.getArrivalTime() == null) {
                         return 0;
                     }
-                    return calculateDemand(visit.getCustomer().getSensorReading().getDate().atStartOfDay(),
+                    int d =  calculateDemand(visit.getCustomer().getSensorReading().getDate().atStartOfDay(),
                             visit.getArrivalTime(),
                             visit.getCustomer().getRate()) + visit.getCustomer().getSensorReading().getValue();
+                    return d;
                 });
         safeSetDemand(scoreDirector, visit, demand);
     }

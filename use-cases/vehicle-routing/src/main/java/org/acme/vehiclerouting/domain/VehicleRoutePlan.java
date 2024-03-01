@@ -24,12 +24,16 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * The plan for routing vehicles to visits, including:
  * <ul>
  * <li>capacity - each vehicle has a capacity for visits demand,</li>
- * <li>time windows - each visit accepts the vehicle only in specified time window.</li>
+ * <li>time windows - each visit accepts the vehicle only in specified time
+ * window.</li>
  * </ul>
  *
- * The planning solution is optimized according to the driving time (as opposed to the travel distance, for example)
- * because it is easy to determine if the vehicle arrival time fits into the visit time window.
- * In addition, optimizing travel time optimizes the distance too, as a side effect - in case there is a faster route,
+ * The planning solution is optimized according to the driving time (as opposed
+ * to the travel distance, for example)
+ * because it is easy to determine if the vehicle arrival time fits into the
+ * visit time window.
+ * In addition, optimizing travel time optimizes the distance too, as a side
+ * effect - in case there is a faster route,
  * the travel time takes precedence (highway vs. local road).
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -44,6 +48,7 @@ public class VehicleRoutePlan {
     private LocalDateTime startDateTime;
 
     private LocalDateTime endDateTime;
+    
     @ProblemFactCollectionProperty
     private List<Customer> customers;
 
@@ -88,10 +93,10 @@ public class VehicleRoutePlan {
         this.customers = customers;
         this.visits = visits;
         List<Location> uniqueLocations = Stream.concat(
-        vehicles.stream().map(Vehicle::getHomeLocation),
-        visits.stream().map(Visit::getLocation))
-    .distinct() // This will filter out duplicate Location objects
-    .collect(Collectors.toList()); // Collect the results into a List
+                vehicles.stream().map(Vehicle::getHomeLocation),
+                visits.stream().map(Visit::getLocation))
+                .distinct() // This will filter out duplicate Location objects
+                .collect(Collectors.toList()); // Collect the results into a List
 
         DrivingTimeCalculator drivingTimeCalculator = HaversineDrivingTimeCalculator.getInstance();
         drivingTimeCalculator.initDrivingTimeMaps(uniqueLocations);
@@ -162,7 +167,7 @@ public class VehicleRoutePlan {
     public List<Customer> getCustomers() {
         return customers;
     }
-    
+
     public void setCustomers(List<Customer> customers) {
         this.customers = customers;
     }

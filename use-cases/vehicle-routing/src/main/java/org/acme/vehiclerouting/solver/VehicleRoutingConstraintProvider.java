@@ -24,13 +24,16 @@ public class VehicleRoutingConstraintProvider implements ConstraintProvider {
                                 vehicleCapacity(factory),
                                 serviceFinishedAfterMaxEndTime(factory),
                                 minimizeTravelTime(factory),
-                                customerCapacity(factory)
+                                customerCapacity(factory),
+                               visitOrder(factory)
                 };
         }
 
         // ************************************************************************
         // Hard constraints
         // ************************************************************************
+
+      
 
         protected Constraint vehicleCapacity(ConstraintFactory factory) {
                 return factory.forEach(Vehicle.class)
@@ -53,7 +56,17 @@ public class VehicleRoutingConstraintProvider implements ConstraintProvider {
                                                 visit.getServiceFinishedDelayInMinutes()))
                                 .asConstraint(SERVICE_FINISHED_AFTER_MAX_END_TIME);
         }
-
+/*
+ * check that the arrivalTime of a visit is before the arrivalTime of the next visit in the customer's visit list
+ */
+        private Constraint visitOrder(ConstraintFactory factory) {
+                return factory.forEachUniquePair(Visit.class)
+                .filter((v1, v2) -> v1.getCustomer().equals(v2.getCustomer())&& v1.getId().compareTo(v2.getId()) < 0
+                                && v1.getArrivalTime() != null && v2.getArrivalTime() != null
+                                && v1.getArrivalTime().isAfter(v2.getArrivalTime()))
+                                .penalizeLong(HardSoftLongScore.ONE_HARD, (v1, v2) -> 1)
+                                .asConstraint("visitOrder");
+        }
         /*
          * check that visit demand does not exceed the visit's customer capacity
          */

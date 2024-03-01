@@ -198,11 +198,13 @@ public class VehicleRouteDemoResource {
                         String lastName = randomStringSelector.apply(LAST_NAMES);
                         return firstName + " " + lastName;
                 };
+                AtomicLong visitSequence = new AtomicLong();
+
                 List<Customer> customers = new ArrayList<>();
                 for (long i = 0; i < demoData.visitCount; i++) {
 
                         Customer customer = new Customer();
-                        customer.setId(i);
+                        customer.setId(visitSequence.incrementAndGet());
                         customer.setName(nameSupplier.get());
                         customer.setCapacity(16);
                         customer.setRate(1);
@@ -214,7 +216,6 @@ public class VehicleRouteDemoResource {
                         customers.add(customer);
                 }
                 ;
-                AtomicLong visitSequence = new AtomicLong();
                 List<Visit> visits = new ArrayList<>();
                 for (Customer customer : customers) {
                         for (int v = 0; v < 1; v++) {
@@ -222,13 +223,16 @@ public class VehicleRouteDemoResource {
                                 LocalDateTime maxEndTime = daysFromToday(AFTERNOON_WINDOW_END, 7);
                                 int serviceDurationMinutes = SERVICE_DURATION_MINUTES[random
                                                 .nextInt(SERVICE_DURATION_MINUTES.length)];
-                                visits.add(new Visit(
+                                Visit visit = new Visit(
                                                 String.valueOf(visitSequence.incrementAndGet()),
                                                 customer,
                                                 demand.nextInt(),
                                                 minStartTime,
                                                 maxEndTime,
-                                                Duration.ofMinutes(serviceDurationMinutes)));
+                                                Duration.ofMinutes(serviceDurationMinutes));
+                                visit.setDeliveryIndex(v);
+                                visits.add(visit);
+                                customer.getVisits().add(visit);
                         }
                 }
 

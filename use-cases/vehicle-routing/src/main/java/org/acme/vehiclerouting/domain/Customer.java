@@ -3,7 +3,11 @@ package org.acme.vehiclerouting.domain;
 import java.util.ArrayList;
 import java.util.List;
 
+import ai.timefold.solver.core.api.domain.lookup.PlanningId;
+
 public class Customer {
+    @PlanningId
+    private long id;
 
     private String name;
     private Location location;
@@ -11,11 +15,11 @@ public class Customer {
     private float rate;
     private int capacity;
     private SensorReading sensorReading;
+
     public Customer() {
         this.visits = new ArrayList<>();
     }
 
-    
     public List<Visit> getVisits() {
         return visits;
     }
@@ -65,6 +69,14 @@ public class Customer {
     public void setLocation(Location location) {
         this.location = location;
     }
+
+
+    public void setId(long i) {
+       this.id = i;
+    }
     
+    public long getId() {
+        return id;
+    }
 
 }

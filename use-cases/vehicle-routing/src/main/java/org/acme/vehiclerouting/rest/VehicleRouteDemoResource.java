@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.PrimitiveIterator;
 import java.util.Random;
@@ -197,17 +198,11 @@ public class VehicleRouteDemoResource {
                         String lastName = randomStringSelector.apply(LAST_NAMES);
                         return firstName + " " + lastName;
                 };
-
-                AtomicLong visitSequence = new AtomicLong();
-                Supplier<Visit> visitSupplier = () -> {
-
-                        LocalDateTime minStartTime = tomorrowAt(MORNING_WINDOW_START);
-                        LocalDateTime maxEndTime = daysFromToday(AFTERNOON_WINDOW_END, 7);
-                        int serviceDurationMinutes = SERVICE_DURATION_MINUTES[random
-                                        .nextInt(SERVICE_DURATION_MINUTES.length)];
-
-// new code for dynamic demand customer
+                List<Customer> customers = new ArrayList<>();
+                for( long i =0 ; i < demoData.visitCount; i++){
+              
                         Customer customer = new Customer();
+                        customer.setId(i);
                         customer.setName(nameSupplier.get());
                         customer.setCapacity(16);
                         customer.setRate(1);
@@ -216,20 +211,24 @@ public class VehicleRouteDemoResource {
                         LocalDate date = LocalDate.now().minusDays(demand.nextInt());
                         SensorReading sensorReading = new SensorReading(date, 10);
                         customer.setSensorReading(sensorReading);
-
-                        return new Visit(
+                        customers.add(customer);
+                };
+                AtomicLong visitSequence = new AtomicLong();
+                List<Visit> visits = new ArrayList<>();
+                for( Customer customer: customers) {
+                        LocalDateTime minStartTime = tomorrowAt(MORNING_WINDOW_START);
+                        LocalDateTime maxEndTime = daysFromToday(AFTERNOON_WINDOW_END, 7);
+                        int serviceDurationMinutes = SERVICE_DURATION_MINUTES[random
+                                        .nextInt(SERVICE_DURATION_MINUTES.length)];
+                        visits.add(new Visit(
                                         String.valueOf(visitSequence.incrementAndGet()),
                                         customer,
                                         demand.nextInt(),
                                         minStartTime,
                                         maxEndTime,
-                                        Duration.ofMinutes(serviceDurationMinutes));
-                };
-
-                List<Visit> visits = Stream.generate(visitSupplier)
-                                .limit(demoData.visitCount)
-                                .collect(Collectors.toList());
-
+                                        Duration.ofMinutes(serviceDurationMinutes)));
+                }
+                
                 return new VehicleRoutePlan(name, demoData.southWestCorner, demoData.northEastCorner,
                                 tomorrowAt(demoData.vehicleStartTime), daysFromToday(LocalTime.MIDNIGHT, 7).plusDays(1L),
                                 vehicles, visits);

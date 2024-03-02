@@ -174,14 +174,15 @@ function renderRoutes(solution) {
     // Visits
     visitMarkerByIdMap.clear();
     visitGroup.clearLayers();
-    solution.visits.forEach(function (visit) {
-        getCustomerMarker(visit);
+    const visitByIdMap = buildIdMap( solution);
+    solution.visits.forEach( visit => {
+     //   getCustomerMarker(visit);
+       visit = visit.id ? visit : visitByIdMap.get(visit);
 
         getVisitMarker(visit).setPopupContent(visitPopupContent(visit));
     });
     // Route
     routeGroup.clearLayers();
-    const visitByIdMap = new Map(solution.visits.map(visit => [visit.id, visit]));
     for (let vehicle of solution.vehicles) {
         const homeLocation = vehicle.homeLocation;
         const locations = vehicle.visits.map(visitId => visitByIdMap.get(visitId).location);
@@ -192,7 +193,12 @@ function renderRoutes(solution) {
     $('#score').text(solution.score);
     $('#drivingTime').text(formatDrivingTime(solution.totalDrivingTimeSeconds));
 }
+function buildIdMap(solution) {
+    const visitByIdMap = new Map();
+    solution.customers.forEach(customer => customer.visits.forEach(visit=> visitByIdMap.set(visit.id, visit)));
 
+    return visitByIdMap;
+}
 function renderTimelines(routePlan) {
     byVehicleGroupData.clear();
     byVisitGroupData.clear();

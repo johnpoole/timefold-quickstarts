@@ -42,11 +42,19 @@ public class ArrivalTimeUpdatingVariableListener implements VariableListener<Veh
         while (nextVisit != null && !Objects.equals(nextVisit.getArrivalTime(), arrivalTime)) {
             safeSetArrivalTime(scoreDirector, nextVisit, arrivalTime);
             updateDemand(scoreDirector, nextVisit);
-            updateDemand(scoreDirector, nextVisit.getNextDelivery()); //not the same as the next visit, so both need to be updated
+            Visit nextDelivery = getNextDelivery(nextVisit);
+            updateDemand(scoreDirector, nextDelivery); //not the same as the next visit, so both need to be updated
             departureTime = nextVisit.getDepartureTime();
             nextVisit = nextVisit.getNextVisit();
             arrivalTime = calculateArrivalTime(nextVisit, departureTime);
         }
+    }
+
+    Visit getNextDelivery(Visit visit) {
+        return visit.getCustomer().getVisits().stream()
+                .filter(v -> v.getDeliveryIndex() == visit.getDeliveryIndex() + 1)
+                .findFirst()
+                .orElse(null);
     }
 
     private void safeSetArrivalTime(ScoreDirector<VehicleRoutePlan> scoreDirector, Visit nextVisit, LocalDateTime arrivalTime) {
@@ -59,7 +67,10 @@ public class ArrivalTimeUpdatingVariableListener implements VariableListener<Veh
         if (visit == null || visit.getArrivalTime() == null) {
             return;
         }
-        Visit previousDelivery = visit.getPreviousDelivery();
+        Visit previousDelivery = visit.getCustomer().getVisits().stream()
+                .filter(v -> v.getDeliveryIndex() == visit.getDeliveryIndex() - 1)
+                .findFirst()
+                .orElse(null);
         Integer demand = calculateDemand(previousDelivery, visit).orElseGet(
                 () -> {
                     if (visit.getArrivalTime() == null) {

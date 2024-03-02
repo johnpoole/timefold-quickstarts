@@ -49,15 +49,15 @@ public class VehicleRoutePlan {
 
     private LocalDateTime endDateTime;
     
-    @ProblemFactCollectionProperty
-    private List<Customer> customers;
-
     @PlanningEntityCollectionProperty
     private List<Vehicle> vehicles;
 
     @PlanningEntityCollectionProperty
     @ValueRangeProvider
     private List<Visit> visits;
+
+    @ProblemFactCollectionProperty
+    private List<Customer> customers;
 
     @PlanningScore
     private HardSoftLongScore score;

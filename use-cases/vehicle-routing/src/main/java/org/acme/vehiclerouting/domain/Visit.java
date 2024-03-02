@@ -183,20 +183,6 @@ public class Visit {
         return id;
     }
 
-    public Visit getNextDelivery() {
-        if( customer.getVisits() == null || deliveryIndex + 1 < customer.getVisits().size() ) {
-            return customer.getVisits().get(deliveryIndex + 1);
-        }
-        return null;
-    }
-
-    public Visit getPreviousDelivery() {
-        if(customer.getVisits() == null || deliveryIndex - 1 < 0 ) {
-            return null;
-        }
-        return customer.getVisits().get(deliveryIndex - 1);
-    }
-
     public int getDeliveryIndex() {
         return deliveryIndex;
     }

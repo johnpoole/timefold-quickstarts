@@ -136,8 +136,9 @@ function getVisitMarker(visit) {
     return marker;
 }
 
-function getCustomerMarker(visit) {
-    let marker = L.circleMarker(visit.location,{ radius: visit.customer.capacity, color: 'red', fillOpacity: 0.0});
+function getCustomerMarker(visit, customers) {
+    let customer = customers.find(customer => customer.id === visit.customer);
+    let marker = L.circleMarker(visit.location,{ radius: customer.capacity, color: 'red', fillOpacity: 0.0});
     marker.addTo(visitGroup).bindPopup();
     return marker;
 }
@@ -176,8 +177,8 @@ function renderRoutes(solution) {
     visitGroup.clearLayers();
     const visitByIdMap = buildIdMap( solution);
     solution.visits.forEach( visit => {
-     //   getCustomerMarker(visit);
        visit = visit.id ? visit : visitByIdMap.get(visit);
+       getCustomerMarker(visit, solution.customers);
 
         getVisitMarker(visit).setPopupContent(visitPopupContent(visit));
     });

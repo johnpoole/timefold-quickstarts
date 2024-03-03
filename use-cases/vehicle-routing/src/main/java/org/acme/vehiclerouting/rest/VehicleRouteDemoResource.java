@@ -183,7 +183,7 @@ public class VehicleRouteDemoResource {
                 // can the vehicles use a single location and just have multiple start Times?
                 Supplier<Vehicle> vehicleSupplier = () -> new Vehicle(
                                 String.valueOf(vehicleSequence.incrementAndGet()),
-                                150,
+                                300,
                                 new Location(latitudes.nextDouble(), longitudes.nextDouble()),
                                 daysFromToday(demoData.vehicleStartTime, vehicleSequence.get()));
 
@@ -218,7 +218,7 @@ public class VehicleRouteDemoResource {
                 ;
                 List<Visit> visits = new ArrayList<>();
                 for (Customer customer : customers) {
-                        for (int v = 0; v < 1; v++) {
+                        for (int v = 0; v < 2; v++) {
                                 LocalDateTime minStartTime = tomorrowAt(MORNING_WINDOW_START);
                                 LocalDateTime maxEndTime = daysFromToday(AFTERNOON_WINDOW_END, 7);
                                 int serviceDurationMinutes = SERVICE_DURATION_MINUTES[random

@@ -6,6 +6,10 @@ import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
 import ai.timefold.solver.core.api.score.stream.ConstraintProvider;
 
 import org.acme.vehiclerouting.domain.Visit;
+
+import java.time.temporal.ChronoUnit;
+
+import org.acme.vehiclerouting.domain.Customer;
 import org.acme.vehiclerouting.domain.Vehicle;
 import org.acme.vehiclerouting.solver.justifications.CustomerCapacityJustification;
 import org.acme.vehiclerouting.solver.justifications.MinimizeTravelTimeJustification;
@@ -25,7 +29,8 @@ public class VehicleRoutingConstraintProvider implements ConstraintProvider {
                                 serviceFinishedAfterMaxEndTime(factory),
                                 minimizeTravelTime(factory),
                                 customerCapacity(factory),
-                               visitOrder(factory)
+                                visitOrder(factory),
+                                finalVolume(factory)
                 };
         }
 
@@ -33,7 +38,39 @@ public class VehicleRoutingConstraintProvider implements ConstraintProvider {
         // Hard constraints
         // ************************************************************************
 
-      
+        /*
+         * Find the last visit for each customer and check that the final demand is less
+         * than the customer's capacity
+         */
+        private Constraint finalVolume(ConstraintFactory factory) {
+                return factory.forEach(Customer.class)
+                                .filter(customer -> {
+                                        Visit lastVisit = customer.getVisits().get(customer.getVisits().size() - 1);
+                                        if( lastVisit.getArrivalTime() == null ){
+                                                return false;
+                                        }
+                                        float demand = lastVisit.getDemand() + customer.getRate() *
+                                                        (lastVisit.getMaxEndTime().until(lastVisit.getArrivalTime(),
+                                                                        ChronoUnit.DAYS));
+                                        return demand > customer.getCapacity();
+                                })
+                                .penalizeLong(HardSoftLongScore.ONE_HARD,
+                                                customer -> {
+                                                        Visit lastVisit = customer.getVisits()
+                                                                        .get(customer.getVisits().size() - 1);
+                                                        float demand = lastVisit.getDemand() + customer.getRate() *
+                                                                        (lastVisit.getMaxEndTime().until(
+                                                                                        lastVisit.getArrivalTime(),
+                                                                                        ChronoUnit.DAYS));
+                                                        return (long) (demand - customer.getCapacity());
+                                                })
+                                .justifyWith((customer, score) -> new CustomerCapacityJustification(
+                                                customer.getVisits().get(customer.getVisits().size() - 1).getId(),
+                                                customer.getVisits().get(customer.getVisits().size() - 1).getDemand(),
+                                                customer.getCapacity()))
+                                .asConstraint("finalVolume");
+
+        }
 
         protected Constraint vehicleCapacity(ConstraintFactory factory) {
                 return factory.forEach(Vehicle.class)
@@ -56,17 +93,21 @@ public class VehicleRoutingConstraintProvider implements ConstraintProvider {
                                                 visit.getServiceFinishedDelayInMinutes()))
                                 .asConstraint(SERVICE_FINISHED_AFTER_MAX_END_TIME);
         }
-/*
- * check that the arrivalTime of a visit is before the arrivalTime of the next visit in the customer's visit list
- */
+
+        /*
+         * check that the arrivalTime of a visit is before the arrivalTime of the next
+         * visit in the customer's visit list
+         */
         private Constraint visitOrder(ConstraintFactory factory) {
                 return factory.forEachUniquePair(Visit.class)
-                .filter((v1, v2) -> v1.getCustomer().equals(v2.getCustomer())&& v1.getId().compareTo(v2.getId()) < 0
-                                && v1.getArrivalTime() != null && v2.getArrivalTime() != null
-                                && v1.getArrivalTime().isAfter(v2.getArrivalTime()))
+                                .filter((v1, v2) -> v1.getCustomer().equals(v2.getCustomer())
+                                                && v1.getId().compareTo(v2.getId()) < 0
+                                                && v1.getArrivalTime() != null && v2.getArrivalTime() != null
+                                                && v1.getArrivalTime().isAfter(v2.getArrivalTime()))
                                 .penalizeLong(HardSoftLongScore.ONE_HARD, (v1, v2) -> 1)
                                 .asConstraint("visitOrder");
         }
+
         /*
          * check that visit demand does not exceed the visit's customer capacity
          */
@@ -75,7 +116,7 @@ public class VehicleRoutingConstraintProvider implements ConstraintProvider {
                                 .filter(visit -> visit.getDemand() > visit.getCustomer().getCapacity())
                                 .penalizeLong(HardSoftLongScore.ONE_HARD,
                                                 visit -> visit.getDemand() - visit.getCustomer().getCapacity())
-                                .justifyWith( (visit, score) -> new CustomerCapacityJustification(visit.getId(),
+                                .justifyWith((visit, score) -> new CustomerCapacityJustification(visit.getId(),
                                                 visit.getDemand(),
                                                 visit.getCustomer().getCapacity()))
                                 .asConstraint("customerCapacity");

@@ -42,19 +42,12 @@ public class ArrivalTimeUpdatingVariableListener implements VariableListener<Veh
         while (nextVisit != null && !Objects.equals(nextVisit.getArrivalTime(), arrivalTime)) {
             safeSetArrivalTime(scoreDirector, nextVisit, arrivalTime);
             updateDemand(scoreDirector, nextVisit);
-            Visit nextDelivery = getNextDelivery(nextVisit);
+            Visit nextDelivery = nextVisit.getNextDelivery();
             updateDemand(scoreDirector, nextDelivery); //not the same as the next visit, so both need to be updated
             departureTime = nextVisit.getDepartureTime();
             nextVisit = nextVisit.getNextVisit();
             arrivalTime = calculateArrivalTime(nextVisit, departureTime);
         }
-    }
-
-    Visit getNextDelivery(Visit visit) {
-        return visit.getCustomer().getVisits().stream()
-                .filter(v -> v.getDeliveryIndex() == visit.getDeliveryIndex() + 1)
-                .findFirst()
-                .orElse(null);
     }
 
     private void safeSetArrivalTime(ScoreDirector<VehicleRoutePlan> scoreDirector, Visit nextVisit, LocalDateTime arrivalTime) {
@@ -67,10 +60,7 @@ public class ArrivalTimeUpdatingVariableListener implements VariableListener<Veh
         if (visit == null || visit.getArrivalTime() == null) {
             return;
         }
-        Visit previousDelivery = visit.getCustomer().getVisits().stream()
-                .filter(v -> v.getDeliveryIndex() == visit.getDeliveryIndex() - 1)
-                .findFirst()
-                .orElse(null);
+        Visit previousDelivery = visit.getPreviousDelivery();
         Integer demand = calculateDemand(previousDelivery, visit).orElseGet(
                 () -> {
                     if (visit.getArrivalTime() == null) {
@@ -78,10 +68,12 @@ public class ArrivalTimeUpdatingVariableListener implements VariableListener<Veh
                     }
                     int d =  calculateDemand(visit.getCustomer().getSensorReading().getDate().atStartOfDay(),
                             visit.getArrivalTime(),
-                            visit.getCustomer().getRate()) + visit.getCustomer().getSensorReading().getValue();
+                            visit.getCustomer().getRate());
+                    
                     return d;
                 });
         safeSetDemand(scoreDirector, visit, demand);
+
     }
 
     private void safeSetDemand(ScoreDirector<VehicleRoutePlan> scoreDirector, Visit visit, Integer demand) {
@@ -104,10 +96,6 @@ public class ArrivalTimeUpdatingVariableListener implements VariableListener<Veh
         // get the difference in days between the two dates
         int days = (int) ChronoUnit.DAYS.between(startTime, endtime);
         return (int) (days * rate);
-    }
-
-    protected Integer calculateDemand(long startTime, long endTime, double rate) {
-        return (int) ((endTime - startTime) * rate);
     }
 
     @Override

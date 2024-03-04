@@ -2,6 +2,7 @@ package org.acme.vehiclerouting.domain;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.temporal.TemporalAmount;
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.lookup.PlanningId;
@@ -42,6 +43,9 @@ public class Visit {
     private int deliveryIndex;
     
     private Customer customer;
+
+    private Visit nextDelivery;
+    private Visit previousDelivery;
 
     public Visit() {
         this.customer = new Customer();
@@ -129,6 +133,8 @@ public class Visit {
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     public LocalDateTime getDepartureTime() {
+        TemporalAmount delay = demand > 0 ? serviceDuration: Duration.ZERO;
+
         if (arrivalTime == null) {
             return null;
         }
@@ -145,16 +151,19 @@ public class Visit {
 
     @JsonIgnore
     public boolean isServiceFinishedAfterMaxEndTime() {
+        TemporalAmount delay = demand > 0 ? serviceDuration: Duration.ZERO;
         return arrivalTime != null
-                && arrivalTime.plus(serviceDuration).isAfter(maxEndTime);
+                && arrivalTime.plus(delay).isAfter(maxEndTime);
     }
 
     @JsonIgnore
     public long getServiceFinishedDelayInMinutes() {
+        TemporalAmount delay = demand > 0 ? serviceDuration: Duration.ZERO;
+
         if (arrivalTime == null) {
             return 0;
         }
-        return Duration.between(maxEndTime, arrivalTime.plus(serviceDuration)).toMinutes();
+        return Duration.between(maxEndTime, arrivalTime.plus(delay)).toMinutes();
     }
 
     @JsonIgnore
@@ -204,5 +213,21 @@ public class Visit {
 
     public String getName() {
         return customer.getName();
+    }
+
+    public Visit getNextDelivery() {
+       return nextDelivery;
+    }
+
+    public void setNextDelivery(Visit nextDelivery) {
+        this.nextDelivery = nextDelivery;
+    }
+
+    public Visit getPreviousDelivery() {
+        return previousDelivery;
+    }
+
+    public void setPreviousDelivery(Visit previousDelivery) {
+        this.previousDelivery = previousDelivery;
     }
 }

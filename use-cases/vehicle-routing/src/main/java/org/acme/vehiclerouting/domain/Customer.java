@@ -14,22 +14,13 @@ public class Customer {
 
     private String name;
     private Location location;
-    private List<Visit> visits;
     private float rate;
     private int capacity;
     private SensorReading sensorReading;
 
     public Customer() {
-        this.visits = new ArrayList<>();
     }
 
-    public List<Visit> getVisits() {
-        return visits;
-    }
-
-    public void setVisits(List<Visit> visits) {
-        this.visits = visits;
-    }
     public float getRate() {
         return rate;
     }

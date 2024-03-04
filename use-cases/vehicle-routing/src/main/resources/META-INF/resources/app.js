@@ -136,9 +136,8 @@ function getVisitMarker(visit) {
     return marker;
 }
 
-function getCustomerMarker(visit, customers) {
-    let customer = customers.find(customer => customer.id === visit.customer);
-    let marker = L.circleMarker(visit.location,{ radius: customer.capacity, color: 'red', fillOpacity: 0.0});
+function getCustomerMarker(customer) {
+    let marker = L.circleMarker(customer.location,{ radius: customer.capacity, color: 'red', fillOpacity: 0.0});
     marker.addTo(visitGroup).bindPopup();
     return marker;
 }
@@ -150,9 +149,13 @@ function renderRoutes(solution) {
     }
     // Vehicles
     vehiclesTable.children().remove();
+    // create a map of visits from the Visits, including the nextDelivery, and the Vehicle's visits
+    const visitByIdMap = visitMap(solution);
+    const customerByIdMap = customerMap(solution);
+
     solution.vehicles.forEach(function (vehicle) {
         getHomeLocationMarker(vehicle).setPopupContent(homeLocationPopupContent(vehicle));
-        const {id, capacity, totalDemand, totalDrivingTimeSeconds} = vehicle;
+        const {id, capacity, totalDemand, totalDrivingTimeSeconds, departureTime} = vehicle;
         const percentage = totalDemand / capacity * 100;
         const color = colorByVehicle(vehicle);
         vehiclesTable.append(`
@@ -162,7 +165,7 @@ function renderRoutes(solution) {
             style="background-color: ${color}; display: inline-block; width: 1rem; height: 1rem; text-align: center">
           </i>
         </td>
-        <td>Vehicle ${id}</td>
+        <td>${departureTime.substring(0,10)}</td>
         <td>
           <div class="progress" data-bs-toggle="tooltip-load" data-bs-placement="left" data-html="true"
             title="Cargo: ${totalDemand} / Capacity: ${capacity}">
@@ -175,11 +178,14 @@ function renderRoutes(solution) {
     // Visits
     visitMarkerByIdMap.clear();
     visitGroup.clearLayers();
-    const visitByIdMap = buildIdMap( solution);
+    //const visitByIdMap = buildIdMap( solution);
+    solution.customers.forEach( customer => {
+        getCustomerMarker(customer);
+    }  );
     solution.visits.forEach( visit => {
-       visit = visit.id ? visit : visitByIdMap.get(visit);
-       getCustomerMarker(visit, solution.customers);
-
+       //visit = visit.id ? visit : visitByIdMap.get(visit);
+     //  
+        visit = visit.id ? visit: visitByIdMap.get(visit);
         getVisitMarker(visit).setPopupContent(visitPopupContent(visit));
     });
     // Route
@@ -194,12 +200,38 @@ function renderRoutes(solution) {
     $('#score').text(solution.score);
     $('#drivingTime').text(formatDrivingTime(solution.totalDrivingTimeSeconds));
 }
-function buildIdMap(solution) {
+function visitMap(solution) {
+    const visitByIdMap = new Map();
+
+    solution.visits.forEach(visit => {
+        if (visit.id) {
+            visitByIdMap.set(visit.id, visit);
+        }
+        if (visit.nextDelivery && visit.nextDelivery.id) {
+            visitByIdMap.set(visit.nextDelivery.id, visit.nextDelivery);
+        }
+        if (visit.previousDelivery && visit.previousDelivery.id) {
+            visitByIdMap.set(visit.previousDelivery.id, visit.previousDelivery);
+        }
+    });
+    return visitByIdMap;
+}
+
+
+function customerMap(solution) {
+    const customerByIdMap = new Map();
+    solution.customers.forEach(customer => customerByIdMap.set(customer.id, customer));
+   // solution.visits.forEach(visit => customerByIdMap.set(visit.customer, customerByIdMap.get(visit.customer)));
+       
+    return customerByIdMap;
+}
+
+/*function buildIdMap(solution) {
     const visitByIdMap = new Map();
     solution.customers.forEach(customer => customer.visits.forEach(visit=> visitByIdMap.set(visit.id, visit)));
 
     return visitByIdMap;
-}
+}*/
 function renderTimelines(routePlan) {
     byVehicleGroupData.clear();
     byVisitGroupData.clear();

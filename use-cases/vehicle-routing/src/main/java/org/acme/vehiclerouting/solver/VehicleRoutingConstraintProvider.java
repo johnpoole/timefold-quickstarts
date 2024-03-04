@@ -30,7 +30,7 @@ public class VehicleRoutingConstraintProvider implements ConstraintProvider {
                                 minimizeTravelTime(factory),
                                 customerCapacity(factory),
                                 visitOrder(factory),
-                                finalVolume(factory)
+                               finalVolume(factory)
                 };
         }
 
@@ -42,32 +42,23 @@ public class VehicleRoutingConstraintProvider implements ConstraintProvider {
          * Find the last visit for each customer and check that the final demand is less
          * than the customer's capacity
          */
-        private Constraint finalVolume(ConstraintFactory factory) {
-                return factory.forEach(Customer.class)
-                                .filter(customer -> {
-                                        Visit lastVisit = customer.getVisits().get(customer.getVisits().size() - 1);
-                                        if( lastVisit.getArrivalTime() == null ){
-                                                return false;
-                                        }
-                                        float demand = lastVisit.getDemand() + customer.getRate() *
-                                                        (lastVisit.getMaxEndTime().until(lastVisit.getArrivalTime(),
-                                                                        ChronoUnit.DAYS));
-                                        return demand > customer.getCapacity();
-                                })
+         private Constraint finalVolume(ConstraintFactory factory) {
+                return factory.forEach(Visit.class)
+                                .filter(visit -> 
+                                        visit.getNextDelivery() == null && 
+                                        visit.getArrivalTime() != null )
+                                .filter(visit -> 
+                                        visit.getDemand() + visit.getCustomer().getRate() *
+                                                        (visit.getMaxEndTime().until(visit.getArrivalTime(),
+                                                                        ChronoUnit.DAYS))
+                                        > visit.getCustomer().getCapacity()
+                                )
                                 .penalizeLong(HardSoftLongScore.ONE_HARD,
-                                                customer -> {
-                                                        Visit lastVisit = customer.getVisits()
-                                                                        .get(customer.getVisits().size() - 1);
-                                                        float demand = lastVisit.getDemand() + customer.getRate() *
-                                                                        (lastVisit.getMaxEndTime().until(
-                                                                                        lastVisit.getArrivalTime(),
-                                                                                        ChronoUnit.DAYS));
-                                                        return (long) (demand - customer.getCapacity());
-                                                })
-                                .justifyWith((customer, score) -> new CustomerCapacityJustification(
-                                                customer.getVisits().get(customer.getVisits().size() - 1).getId(),
-                                                customer.getVisits().get(customer.getVisits().size() - 1).getDemand(),
-                                                customer.getCapacity()))
+                                                visit -> (long)(visit.getDemand() + visit.getCustomer().getRate() *
+                                                (visit.getMaxEndTime().until(visit.getArrivalTime(),
+                                                                ChronoUnit.DAYS))
+                                - visit.getCustomer().getCapacity()))
+                               
                                 .asConstraint("finalVolume");
 
         }

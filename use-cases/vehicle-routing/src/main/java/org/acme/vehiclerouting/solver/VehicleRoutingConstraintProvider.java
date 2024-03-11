@@ -15,6 +15,7 @@ import org.acme.vehiclerouting.solver.justifications.CustomerCapacityJustificati
 import org.acme.vehiclerouting.solver.justifications.MinimizeTravelTimeJustification;
 import org.acme.vehiclerouting.solver.justifications.ServiceFinishedAfterMaxEndTimeJustification;
 import org.acme.vehiclerouting.solver.justifications.VehicleCapacityJustification;
+import org.acme.vehiclerouting.solver.justifications.VisitOrderJustification;
 
 public class VehicleRoutingConstraintProvider implements ConstraintProvider {
 
@@ -95,7 +96,8 @@ public class VehicleRoutingConstraintProvider implements ConstraintProvider {
                                                 && v1.getId().compareTo(v2.getId()) < 0
                                                 && v1.getArrivalTime() != null && v2.getArrivalTime() != null
                                                 && v1.getArrivalTime().isAfter(v2.getArrivalTime()))
-                                .penalizeLong(HardSoftLongScore.ONE_HARD, (v1, v2) -> 1)
+                                .penalizeLong(HardSoftLongScore.ONE_HARD, (v1, v2) -> 99)
+                                .justifyWith((v1, v2, score) -> new VisitOrderJustification(v1.getId(), v2.getId()))
                                 .asConstraint("visitOrder");
         }
 

@@ -102,10 +102,11 @@ function homeLocationPopupContent(vehicle) {
 Home Location`;
 }
 
-function visitPopupContent(visit) {
+function visitPopupContent(visit, vehicle) {
     const arrival = visit.arrivalTime ? `<h6>Arrival at ${showTimeOnly(visit.arrivalTime)}.</h6>` : '';
+    const vehicleDate = vehicle && vehicle.departureTime ? "on "+ vehicle.departureTime.substring(0,10) : '';
     return `<h5>${visit.name}</h5>
-    <h6>Demand: ${visit.demand}</h6>
+    <h6>Demand: ${visit.demand}  ${vehicleDate}</h6>
     <h6>Available from ${showTimeOnly(visit.minStartTime)} to ${showTimeOnly(visit.maxEndTime)}.</h6>
     ${arrival}`;
 }
@@ -152,6 +153,7 @@ function renderRoutes(solution) {
     // create a map of visits from the Visits, including the nextDelivery, and the Vehicle's visits
     const visitByIdMap = visitMap(solution);
     const customerByIdMap = customerMap(solution);
+    const vehicleByIdMap = vehicleMap(solution);
 
     solution.vehicles.forEach(function (vehicle) {
         getHomeLocationMarker(vehicle).setPopupContent(homeLocationPopupContent(vehicle));
@@ -184,9 +186,14 @@ function renderRoutes(solution) {
     }  );
     solution.visits.forEach( visit => {
        //visit = visit.id ? visit : visitByIdMap.get(visit);
-     //  
+     // 
         visit = visit.id ? visit: visitByIdMap.get(visit);
-        getVisitMarker(visit).setPopupContent(visitPopupContent(visit));
+        let vehicle = visit.vehicle;
+        if( visit.vehicle && !visit.vehicle.id) {
+           vehicle = vehicleByIdMap.get(visit.vehicle);
+        }
+
+        getVisitMarker(visit).setPopupContent(visitPopupContent(visit, vehicle));
     });
     // Route
     routeGroup.clearLayers();
@@ -226,6 +233,12 @@ function customerMap(solution) {
     return customerByIdMap;
 }
 
+function vehicleMap(solution) {
+
+    const vehicleByIdMap = new Map();
+    solution.vehicles.forEach(vehicle => vehicleByIdMap.set(vehicle.id, vehicle));
+    return vehicleByIdMap;
+}
 /*function buildIdMap(solution) {
     const visitByIdMap = new Map();
     solution.customers.forEach(customer => customer.visits.forEach(visit=> visitByIdMap.set(visit.id, visit)));
@@ -237,6 +250,7 @@ function renderTimelines(routePlan) {
     byVisitGroupData.clear();
     byVehicleItemData.clear();
     byVisitItemData.clear();
+    const visitByIdMap = visitMap(routePlan);
 
     $.each(routePlan.vehicles, function (index, vehicle) {
         const {totalDemand, capacity} = vehicle
@@ -252,6 +266,7 @@ function renderTimelines(routePlan) {
     });
 
     $.each(routePlan.visits, function (index, visit) {
+        visit = visit.id ? visit : visitByIdMap.get(visit);
         const minStartTime = JSJoda.LocalDateTime.parse(visit.minStartTime);
         const maxEndTime = JSJoda.LocalDateTime.parse(visit.maxEndTime);
         const serviceDuration = JSJoda.Duration.ofSeconds(visit.serviceDuration);

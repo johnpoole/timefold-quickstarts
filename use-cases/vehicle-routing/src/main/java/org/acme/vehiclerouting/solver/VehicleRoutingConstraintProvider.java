@@ -12,6 +12,7 @@ import java.time.temporal.ChronoUnit;
 import org.acme.vehiclerouting.domain.Customer;
 import org.acme.vehiclerouting.domain.Vehicle;
 import org.acme.vehiclerouting.solver.justifications.CustomerCapacityJustification;
+import org.acme.vehiclerouting.solver.justifications.FinalVolumeJustification;
 import org.acme.vehiclerouting.solver.justifications.MinimizeTravelTimeJustification;
 import org.acme.vehiclerouting.solver.justifications.ServiceFinishedAfterMaxEndTimeJustification;
 import org.acme.vehiclerouting.solver.justifications.VehicleCapacityJustification;
@@ -31,7 +32,7 @@ public class VehicleRoutingConstraintProvider implements ConstraintProvider {
                                 minimizeTravelTime(factory),
                                 customerCapacity(factory),
                                 visitOrder(factory),
-                               finalVolume(factory)
+                                finalVolume(factory)
                 };
         }
 
@@ -43,25 +44,29 @@ public class VehicleRoutingConstraintProvider implements ConstraintProvider {
          * Find the last visit for each customer and check that the final demand is less
          * than the customer's capacity
          */
-         private Constraint finalVolume(ConstraintFactory factory) {
+        private Constraint finalVolume(ConstraintFactory factory) {
                 return factory.forEach(Visit.class)
-                                .filter(visit -> 
-                                        visit.getNextDelivery() == null && 
-                                        visit.getArrivalTime() != null )
-                                .filter(visit -> 
-                                        visit.getDemand() + visit.getCustomer().getRate() *
-                                                        (visit.getMaxEndTime().until(visit.getArrivalTime(),
-                                                                        ChronoUnit.DAYS))
-                                        > visit.getCustomer().getCapacity()
+                                .filter(visit -> visit.getNextDelivery() == null &&
+                                                visit.getArrivalTime() != null)
+                                .filter(visit ->
+                                        visit.getCustomer().getRate() * timeUntilMaxTime(visit)
+                                                > visit.getCustomer().getCapacity()
                                 )
                                 .penalizeLong(HardSoftLongScore.ONE_HARD,
-                                                visit -> (long)(visit.getDemand() + visit.getCustomer().getRate() *
-                                                (visit.getMaxEndTime().until(visit.getArrivalTime(),
-                                                                ChronoUnit.DAYS))
-                                - visit.getCustomer().getCapacity()))
-                               
+                                                visit -> (long)(visit.getCustomer().getRate() * timeUntilMaxTime(visit) - visit.getCustomer().getCapacity())
+                                        )
+                                .justifyWith((visit, score) -> new FinalVolumeJustification(visit.getId(),
+                                                (int) (visit.getDemand() + visit.getCustomer().getRate() *
+                                                                (visit.getMaxEndTime().until(visit.getArrivalTime(),
+                                                                                ChronoUnit.DAYS))),
+                                                visit.getCustomer().getCapacity()))
+
                                 .asConstraint("finalVolume");
 
+        }
+
+        int timeUntilMaxTime(Visit visit) {
+                return (int) visit.getArrivalTime().until(visit.getMaxEndTime(), ChronoUnit.DAYS);
         }
 
         protected Constraint vehicleCapacity(ConstraintFactory factory) {

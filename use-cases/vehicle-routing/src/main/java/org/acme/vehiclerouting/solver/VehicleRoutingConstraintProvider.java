@@ -2,8 +2,10 @@ package org.acme.vehiclerouting.solver;
 
 import ai.timefold.solver.core.api.score.buildin.hardsoftlong.HardSoftLongScore;
 import ai.timefold.solver.core.api.score.stream.Constraint;
+import ai.timefold.solver.core.api.score.stream.ConstraintCollectors;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
 import ai.timefold.solver.core.api.score.stream.ConstraintProvider;
+import ai.timefold.solver.core.api.score.stream.Joiners;
 
 import org.acme.vehiclerouting.domain.Visit;
 
@@ -69,16 +71,21 @@ public class VehicleRoutingConstraintProvider implements ConstraintProvider {
                 return (int) visit.getArrivalTime().until(visit.getMaxEndTime(), ChronoUnit.DAYS);
         }
 
-        protected Constraint vehicleCapacity(ConstraintFactory factory) {
-                return factory.forEach(Vehicle.class)
-                                .filter(vehicle -> vehicle.getTotalDemand() > vehicle.getCapacity())
-                                .penalizeLong(HardSoftLongScore.ONE_HARD,
-                                                vehicle -> vehicle.getTotalDemand() - vehicle.getCapacity())
-                                .justifyWith((vehicle, score) -> new VehicleCapacityJustification(vehicle.getId(),
-                                                vehicle.getTotalDemand(),
-                                                vehicle.getCapacity()))
-                                .asConstraint(VEHICLE_CAPACITY);
-        }
+       protected Constraint vehicleCapacity(ConstraintFactory factory) {
+    return factory.forEach(Vehicle.class)
+            .join(Visit.class,
+                  Joiners.equal(vehicle -> vehicle, Visit::getVehicle))
+            .groupBy((vehicle, visit) -> vehicle,
+                     ConstraintCollectors.sum((vehicle, visit) -> visit.getDemand()))
+            .filter((vehicle, totalDemand) -> totalDemand > vehicle.getCapacity())
+            .penalizeLong(HardSoftLongScore.ONE_HARD,
+                          (vehicle, totalDemand) -> totalDemand - vehicle.getCapacity())
+            .justifyWith((vehicle, totalDemand, score) -> new VehicleCapacityJustification(vehicle.getId(),
+                                                                                            totalDemand,
+                                                                                            vehicle.getCapacity()))
+            .asConstraint("Vehicle Capacity");
+}
+
 
         protected Constraint serviceFinishedAfterMaxEndTime(ConstraintFactory factory) {
                 return factory.forEach(Visit.class)
@@ -111,7 +118,7 @@ public class VehicleRoutingConstraintProvider implements ConstraintProvider {
          */
         private Constraint customerCapacity(ConstraintFactory factory) {
                 return factory.forEach(Visit.class)
-                                .filter(visit -> visit.getDemand() > visit.getCustomer().getCapacity())
+                                .filter(visit -> visit.getDemand() != null && visit.getDemand() > visit.getCustomer().getCapacity())
                                 .penalizeLong(HardSoftLongScore.ONE_HARD,
                                                 visit -> visit.getDemand() - visit.getCustomer().getCapacity())
                                 .justifyWith((visit, score) -> new CustomerCapacityJustification(visit.getId(),

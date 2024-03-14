@@ -80,7 +80,7 @@ public class Vehicle {
     // Complex methods
     // ************************************************************************
 
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    /*@JsonProperty(access = JsonProperty.Access.READ_ONLY)
     public int getTotalDemand() {
         int totalDemand = 0;
         for (Visit visit : visits) {
@@ -88,7 +88,7 @@ public class Vehicle {
         }
         return totalDemand;
     }
-
+*/
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     public long getTotalDrivingTimeSeconds() {
         if (visits.isEmpty()) {

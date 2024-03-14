@@ -29,6 +29,8 @@ public class ArrivalTimeUpdatingVariableListener implements VariableListener<Veh
                 scoreDirector.beforeVariableChanged(visit, ARRIVAL_TIME_FIELD);
                 visit.setArrivalTime(null);
                 scoreDirector.afterVariableChanged(visit, ARRIVAL_TIME_FIELD);
+                updateDemand(scoreDirector, visit);
+                updateDemand(scoreDirector, visit.getNextDelivery());
             }
             return;
         }
@@ -43,45 +45,46 @@ public class ArrivalTimeUpdatingVariableListener implements VariableListener<Veh
             safeSetArrivalTime(scoreDirector, nextVisit, arrivalTime);
             updateDemand(scoreDirector, nextVisit);
             Visit nextDelivery = nextVisit.getNextDelivery();
-            updateDemand(scoreDirector, nextDelivery); //not the same as the next visit, so both need to be updated
+            updateDemand(scoreDirector, nextDelivery); // not the same as the next visit, so both need to be updated
             departureTime = nextVisit.getDepartureTime();
             nextVisit = nextVisit.getNextVisit();
             arrivalTime = calculateArrivalTime(nextVisit, departureTime);
         }
     }
 
-    private void safeSetArrivalTime(ScoreDirector<VehicleRoutePlan> scoreDirector, Visit nextVisit, LocalDateTime arrivalTime) {
+    private void safeSetArrivalTime(ScoreDirector<VehicleRoutePlan> scoreDirector, Visit nextVisit,
+            LocalDateTime arrivalTime) {
         scoreDirector.beforeVariableChanged(nextVisit, ARRIVAL_TIME_FIELD);
         nextVisit.setArrivalTime(arrivalTime);
         scoreDirector.afterVariableChanged(nextVisit, ARRIVAL_TIME_FIELD);
     }
 
     private void updateDemand(ScoreDirector<VehicleRoutePlan> scoreDirector, Visit visit) {
-        if (visit == null || visit.getArrivalTime() == null) {
+        if (visit == null) {
             return;
         }
         Visit previousDelivery = visit.getPreviousDelivery();
+        if (visit.getArrivalTime() == null) {
+            scoreDirector.beforeVariableChanged(visit, DEMAND_FIELD);
+            visit.setDemand(null);
+            scoreDirector.afterVariableChanged(visit, DEMAND_FIELD);
+            return;
+        }
         Integer demand = calculateDemand(previousDelivery, visit).orElseGet(
                 () -> {
-                    if (visit.getArrivalTime() == null) {
-                        return 0;
-                    }
-                    int d =  calculateDemand(visit.getCustomer().getSensorReading().getDate().atStartOfDay(),
+
+                    int d = calculateDemand(visit.getCustomer().getSensorReading().getDate().atStartOfDay(),
                             visit.getArrivalTime(),
                             visit.getCustomer().getRate());
-                    
+
                     return d;
                 });
-        safeSetDemand(scoreDirector, visit, demand);
-
-    }
-
-    private void safeSetDemand(ScoreDirector<VehicleRoutePlan> scoreDirector, Visit visit, Integer demand) {
         if (!Objects.equals(visit.getDemand(), demand)) {
             scoreDirector.beforeVariableChanged(visit, DEMAND_FIELD);
             visit.setDemand(demand);
             scoreDirector.afterVariableChanged(visit, DEMAND_FIELD);
         }
+
     }
 
     private Optional<Integer> calculateDemand(Visit previousDelivery, Visit visit) {

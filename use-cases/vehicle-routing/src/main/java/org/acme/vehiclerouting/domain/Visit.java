@@ -133,7 +133,6 @@ public class Visit {
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     public LocalDateTime getDepartureTime() {
-        TemporalAmount delay = demand > 0 ? serviceDuration: Duration.ZERO;
 
         if (arrivalTime == null) {
             return null;
@@ -151,7 +150,7 @@ public class Visit {
 
     @JsonIgnore
     public boolean isServiceFinishedAfterMaxEndTime() {
-        TemporalAmount delay = demand > 0 ? serviceDuration: Duration.ZERO;
+        TemporalAmount delay = demand !=null &&  demand > 0 ? serviceDuration: Duration.ZERO;
         return arrivalTime != null
                 && arrivalTime.plus(delay).isAfter(maxEndTime);
     }

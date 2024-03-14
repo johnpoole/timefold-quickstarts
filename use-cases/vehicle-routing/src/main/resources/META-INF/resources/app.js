@@ -189,7 +189,7 @@ function renderRoutes(solution) {
      // 
         visit = visit.id ? visit: visitByIdMap.get(visit);
         let vehicle = visit.vehicle;
-        if( visit.vehicle && !visit.vehicle.id) {
+        if( vehicle && !vehicle.id) {
            vehicle = vehicleByIdMap.get(visit.vehicle);
         }
 
@@ -214,8 +214,10 @@ function visitMap(solution) {
         if (visit.id) {
             visitByIdMap.set(visit.id, visit);
         }
-        if (visit.nextDelivery && visit.nextDelivery.id) {
-            visitByIdMap.set(visit.nextDelivery.id, visit.nextDelivery);
+        let nextDelivery = visit.nextDelivery;
+        while (nextDelivery && nextDelivery.id) {
+            visitByIdMap.set(nextDelivery.id, nextDelivery);
+            nextDelivery = nextDelivery.nextDelivery;
         }
         if (visit.previousDelivery && visit.previousDelivery.id) {
             visitByIdMap.set(visit.previousDelivery.id, visit.previousDelivery);
